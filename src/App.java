@@ -2,17 +2,17 @@
  * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
  * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Main.java to edit this template
  */
-package database.with.jdbc;
+
 
 /**
  *
  * @author Marcos
  */
-public class App {
+import conection.OperacionesDB;
 
-    /**
-     * @param args the command line arguments
-     */
+public class App {
+    
+
     // Método principal para poner a prueba todas las funciones
     public static void main(String[] args) {
         OperacionesDB ops = new OperacionesDB();
