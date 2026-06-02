@@ -9,16 +9,9 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.util.ArrayList;
 
-import javax.swing.JButton;
-import javax.swing.JFrame;
-import javax.swing.JLabel;
-import javax.swing.JOptionPane;
-import javax.swing.JPanel;
-import javax.swing.JScrollPane;
-import javax.swing.JTable;
-import javax.swing.JTextField;
+import javax.swing.*;
+
 import javax.swing.table.DefaultTableModel;
-import controller.EmpleadoDAO;
 
 public class ventanaPrincipal extends JFrame {
 
@@ -31,6 +24,8 @@ public class ventanaPrincipal extends JFrame {
 
     private JButton btnModificar;
     private JButton btnEliminar;
+    private JButton btnAgregar;
+
 
     private EmpleadoDAO dao;
 
@@ -44,7 +39,6 @@ public class ventanaPrincipal extends JFrame {
         setLocationRelativeTo(null);
 
         inicializarComponentes();
-
         cargarTabla();
 
         setVisible(true);
@@ -54,12 +48,8 @@ public class ventanaPrincipal extends JFrame {
 
         setLayout(new BorderLayout());
 
-        //----------------------------
-        // PANEL IZQUIERDO
-        //----------------------------
-
-        JPanel panelFormulario = new JPanel();
-        panelFormulario.setLayout(new GridLayout(8, 1, 5, 5));
+        // ---------------- PANEL FORM ----------------
+        JPanel panelFormulario = new JPanel(new GridLayout(7, 1, 5, 5));
 
         panelFormulario.add(new JLabel("ID"));
         txtId = new JTextField();
@@ -76,16 +66,15 @@ public class ventanaPrincipal extends JFrame {
 
         btnModificar = new JButton("Modificar");
         btnEliminar = new JButton("Eliminar");
+        btnAgregar = new JButton("Agregar");
 
         panelFormulario.add(btnModificar);
         panelFormulario.add(btnEliminar);
+        panelFormulario.add(btnAgregar);
 
         add(panelFormulario, BorderLayout.WEST);
 
-        //----------------------------
-        // TABLA DERECHA
-        //----------------------------
-
+        // ---------------- TABLE ----------------
         modelo = new DefaultTableModel();
         modelo.addColumn("ID");
         modelo.addColumn("Nombre");
@@ -93,38 +82,26 @@ public class ventanaPrincipal extends JFrame {
 
         tabla = new JTable(modelo);
 
-        JScrollPane scrollPane = new JScrollPane(tabla);
+        add(new JScrollPane(tabla), BorderLayout.CENTER);
 
-        add(scrollPane, BorderLayout.CENTER);
-
-        //----------------------------
-        // EVENTOS
-        //----------------------------
-
+        // ---------------- EVENTS ----------------
         tabla.addMouseListener(new MouseAdapter() {
-
             @Override
             public void mouseClicked(MouseEvent e) {
 
                 int fila = tabla.getSelectedRow();
 
                 if (fila != -1) {
-
-                    txtId.setText(
-                            tabla.getValueAt(fila, 0).toString());
-
-                    txtNombre.setText(
-                            tabla.getValueAt(fila, 1).toString());
-
-                    txtDepartamento.setText(
-                            tabla.getValueAt(fila, 2).toString());
+                    txtId.setText(modelo.getValueAt(fila, 0).toString());
+                    txtNombre.setText(modelo.getValueAt(fila, 1).toString());
+                    txtDepartamento.setText(modelo.getValueAt(fila, 2).toString());
                 }
             }
         });
 
         btnModificar.addActionListener(e -> modificarEmpleado());
-
         btnEliminar.addActionListener(e -> eliminarEmpleado());
+        btnAgregar.addActionListener(e -> agregarEmpleado());
     }
 
     private void cargarTabla() {
@@ -134,11 +111,10 @@ public class ventanaPrincipal extends JFrame {
         ArrayList<Empleados> empleados = dao.consultarTodos();
 
         for (Empleados emp : empleados) {
-
             modelo.addRow(new Object[]{
-                emp.getId(),
-                emp.getNombre(),
-                emp.getDepartamento()
+                    emp.getId(),
+                    emp.getNombre(),
+                    emp.getDepartamento()
             });
         }
     }
@@ -146,32 +122,29 @@ public class ventanaPrincipal extends JFrame {
     private void modificarEmpleado() {
 
         try {
+            if (txtId.getText().isEmpty()) {
+                JOptionPane.showMessageDialog(this, "Selecciona un empleado primero.");
+                return;
+            }
+
+            String nombre = txtNombre.getText().trim();
+            String departamento = txtDepartamento.getText().trim();
+
+            if (nombre.isEmpty() || departamento.isEmpty()) {
+                JOptionPane.showMessageDialog(this, "Nombre y departamento no pueden estar vacíos.");
+                return;
+            }
 
             int id = Integer.parseInt(txtId.getText());
-            String nombre = txtNombre.getText();
-            String departamento = txtDepartamento.getText();
 
-            Empleados emp = new Empleados(
-                    id,
-                    nombre,
-                    departamento
-            );
-
-            dao.actualizarDepartamento(emp);
+            dao.actualizarDepartamento(id, departamento);
 
             cargarTabla();
 
-            JOptionPane.showMessageDialog(
-                    this,
-                    "Empleado modificado correctamente."
-            );
+            JOptionPane.showMessageDialog(this, "Empleado modificado correctamente.");
 
         } catch (Exception ex) {
-
-            JOptionPane.showMessageDialog(
-                    this,
-                    "Error al modificar empleado."
-            );
+            JOptionPane.showMessageDialog(this, "Error al modificar empleado: " + ex.getMessage());
         }
     }
 
@@ -179,32 +152,54 @@ public class ventanaPrincipal extends JFrame {
 
         try {
 
+            if (txtId.getText().isEmpty()) {
+                JOptionPane.showMessageDialog(this, "Selecciona un empleado primero.");
+                return;
+            }
+
             int id = Integer.parseInt(txtId.getText());
 
             dao.borrarEmpleado(id);
 
             cargarTabla();
-
             limpiarCampos();
 
-            JOptionPane.showMessageDialog(
-                    this,
-                    "Empleado eliminado correctamente."
-            );
+            JOptionPane.showMessageDialog(this, "Empleado eliminado correctamente.");
 
         } catch (Exception ex) {
-
-            JOptionPane.showMessageDialog(
-                    this,
-                    "Error al eliminar empleado."
-            );
+            JOptionPane.showMessageDialog(this, "Error al eliminar empleado: " + ex.getMessage());
         }
     }
 
-    private void limpiarCampos() {
+    private void agregarEmpleado() {
 
+    try {
+        String nombre = txtNombre.getText().trim();
+        String departamento = txtDepartamento.getText().trim();
+
+        if (nombre.isEmpty() || departamento.isEmpty()) {
+            JOptionPane.showMessageDialog(this,
+                    "Nombre y departamento no pueden estar vacíos.");
+            return;
+        }
+
+        dao.insertarEmpleado(nombre, departamento);
+
+        cargarTabla();
+        limpiarCampos();
+
+        JOptionPane.showMessageDialog(this,
+                "Empleado agregado correctamente.");
+
+    } catch (Exception ex) {
+        JOptionPane.showMessageDialog(this,
+                "Error al agregar empleado: " + ex.getMessage());
+    }
+}
+    private void limpiarCampos() {
         txtId.setText("");
         txtNombre.setText("");
         txtDepartamento.setText("");
     }
 }
+

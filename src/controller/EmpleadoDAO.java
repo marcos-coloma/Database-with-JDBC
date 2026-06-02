@@ -8,7 +8,7 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import models.Empleados;
 
-public abstract class EmpleadoDAO implements OperacionesDAO {
+public class EmpleadoDAO implements OperacionesDAO {
     
     //implementar la interfaz usar PreparedStatement para evitar inyecciones SQL
 
