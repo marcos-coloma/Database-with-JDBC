@@ -6,9 +6,9 @@
 
 /**
  *
- * @author Marcos
+ * @author Marcos & Fabian
  */
-import conection.OperacionesDB;
+
 
 import controller.EmpleadoDAO;
 import views.ventanaPrincipal;

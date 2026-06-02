@@ -1,17 +1,14 @@
 package views;
 
-import models.Empleados;
 import controller.EmpleadoDAO;
-
-import java.awt.BorderLayout;
-import java.awt.GridLayout;
-import java.awt.event.MouseAdapter;
-import java.awt.event.MouseEvent;
-import java.util.ArrayList;
+import models.Departamento;
+import models.Empleados;
 
 import javax.swing.*;
-
 import javax.swing.table.DefaultTableModel;
+import java.awt.*;
+import java.awt.event.MouseAdapter;
+import java.util.ArrayList;
 
 public class ventanaPrincipal extends JFrame {
 
@@ -20,12 +17,17 @@ public class ventanaPrincipal extends JFrame {
 
     private JTextField txtId;
     private JTextField txtNombre;
-    private JTextField txtDepartamento;
 
+    private JComboBox<Departamento> cbDepartamento;
+
+    private JLabel lblFoto;
+    private JButton btnFoto;
+
+    private JButton btnAgregar;
     private JButton btnModificar;
     private JButton btnEliminar;
-    private JButton btnAgregar;
 
+    private String rutaFoto;
 
     private EmpleadoDAO dao;
 
@@ -34,172 +36,179 @@ public class ventanaPrincipal extends JFrame {
         this.dao = dao;
 
         setTitle("Gestión de Empleados");
-        setSize(800, 400);
+        setSize(900, 500);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLocationRelativeTo(null);
 
-        inicializarComponentes();
-        cargarTabla();
+        init();
+        loadDepartamentos();
+        loadTable();
 
         setVisible(true);
     }
 
-    private void inicializarComponentes() {
+    private void init() {
 
         setLayout(new BorderLayout());
 
-        // ---------------- PANEL FORM ----------------
-        JPanel panelFormulario = new JPanel(new GridLayout(7, 1, 5, 5));
+        // FORM
+        JPanel form = new JPanel(new GridLayout(10, 1, 5, 5));
 
-        panelFormulario.add(new JLabel("ID"));
+        form.add(new JLabel("ID"));
         txtId = new JTextField();
         txtId.setEditable(false);
-        panelFormulario.add(txtId);
+        form.add(txtId);
 
-        panelFormulario.add(new JLabel("Nombre"));
+        form.add(new JLabel("Nombre"));
         txtNombre = new JTextField();
-        panelFormulario.add(txtNombre);
+        form.add(txtNombre);
 
-        panelFormulario.add(new JLabel("Departamento"));
-        txtDepartamento = new JTextField();
-        panelFormulario.add(txtDepartamento);
+        form.add(new JLabel("Departamento"));
+        cbDepartamento = new JComboBox<>();
+        form.add(cbDepartamento);
 
+        btnFoto = new JButton("Buscar Foto");
+        lblFoto = new JLabel();
+        lblFoto.setPreferredSize(new Dimension(120, 120));
+
+        form.add(btnFoto);
+        form.add(lblFoto);
+
+        btnAgregar = new JButton("Agregar");
         btnModificar = new JButton("Modificar");
         btnEliminar = new JButton("Eliminar");
-        btnAgregar = new JButton("Agregar");
 
-        panelFormulario.add(btnModificar);
-        panelFormulario.add(btnEliminar);
-        panelFormulario.add(btnAgregar);
+        form.add(btnAgregar);
+        form.add(btnModificar);
+        form.add(btnEliminar);
 
-        add(panelFormulario, BorderLayout.WEST);
+        add(form, BorderLayout.WEST);
 
-        // ---------------- TABLE ----------------
+        // TABLE
         modelo = new DefaultTableModel();
         modelo.addColumn("ID");
         modelo.addColumn("Nombre");
         modelo.addColumn("Departamento");
+        modelo.addColumn("Foto");
 
         tabla = new JTable(modelo);
-
         add(new JScrollPane(tabla), BorderLayout.CENTER);
 
-        // ---------------- EVENTS ----------------
+        // EVENTS
         tabla.addMouseListener(new MouseAdapter() {
-            @Override
-            public void mouseClicked(MouseEvent e) {
+            public void mouseClicked(java.awt.event.MouseEvent e) {
 
-                int fila = tabla.getSelectedRow();
+                int row = tabla.getSelectedRow();
 
-                if (fila != -1) {
-                    txtId.setText(modelo.getValueAt(fila, 0).toString());
-                    txtNombre.setText(modelo.getValueAt(fila, 1).toString());
-                    txtDepartamento.setText(modelo.getValueAt(fila, 2).toString());
+                if (row != -1) {
+                    txtId.setText(modelo.getValueAt(row, 0).toString());
+                    txtNombre.setText(modelo.getValueAt(row, 1).toString());
+
+                    rutaFoto = modelo.getValueAt(row, 3) != null
+                            ? modelo.getValueAt(row, 3).toString()
+                            : "";
+
+                    if (!rutaFoto.isEmpty()) {
+                        lblFoto.setIcon(new ImageIcon(rutaFoto));
+                    }
                 }
             }
         });
 
-        btnModificar.addActionListener(e -> modificarEmpleado());
-        btnEliminar.addActionListener(e -> eliminarEmpleado());
-        btnAgregar.addActionListener(e -> agregarEmpleado());
+        btnFoto.addActionListener(e -> choosePhoto());
+
+        btnAgregar.addActionListener(e -> addEmployee());
+        btnModificar.addActionListener(e -> updateEmployee());
+        btnEliminar.addActionListener(e -> deleteEmployee());
     }
 
-    private void cargarTabla() {
+    // ---------------- FOTO ----------------
+    private void choosePhoto() {
+
+        JFileChooser chooser = new JFileChooser();
+        int result = chooser.showOpenDialog(this);
+
+        if (result == JFileChooser.APPROVE_OPTION) {
+
+            java.io.File file = chooser.getSelectedFile();
+            rutaFoto = file.getAbsolutePath();
+
+            lblFoto.setIcon(new ImageIcon(rutaFoto));
+        }
+    }
+
+    // ---------------- DATA ----------------
+    private void loadDepartamentos() {
+
+        ArrayList<Departamento> list = dao.consultarDepartamentos();
+
+        cbDepartamento.removeAllItems();
+
+        for (Departamento d : list) {
+            cbDepartamento.addItem(d);
+        }
+    }
+
+    private void loadTable() {
 
         modelo.setRowCount(0);
 
-        ArrayList<Empleados> empleados = dao.consultarTodos();
+        ArrayList<Empleados> list = dao.consultarTodos();
 
-        for (Empleados emp : empleados) {
+        for (Empleados e : list) {
+
             modelo.addRow(new Object[]{
-                    emp.getId(),
-                    emp.getNombre(),
-                    emp.getDepartamento()
+                    e.getId(),
+                    e.getNombre(),
+                    e.getDepartamento(),
+                    e.getFoto()
             });
         }
     }
 
-    private void modificarEmpleado() {
+    // ---------------- CRUD ----------------
+    private void addEmployee() {
 
-        try {
-            if (txtId.getText().isEmpty()) {
-                JOptionPane.showMessageDialog(this, "Selecciona un empleado primero.");
-                return;
-            }
-
-            String nombre = txtNombre.getText().trim();
-            String departamento = txtDepartamento.getText().trim();
-
-            if (nombre.isEmpty() || departamento.isEmpty()) {
-                JOptionPane.showMessageDialog(this, "Nombre y departamento no pueden estar vacíos.");
-                return;
-            }
-
-            int id = Integer.parseInt(txtId.getText());
-
-            dao.actualizarDepartamento(id, departamento);
-
-            cargarTabla();
-
-            JOptionPane.showMessageDialog(this, "Empleado modificado correctamente.");
-
-        } catch (Exception ex) {
-            JOptionPane.showMessageDialog(this, "Error al modificar empleado: " + ex.getMessage());
-        }
-    }
-
-    private void eliminarEmpleado() {
-
-        try {
-
-            if (txtId.getText().isEmpty()) {
-                JOptionPane.showMessageDialog(this, "Selecciona un empleado primero.");
-                return;
-            }
-
-            int id = Integer.parseInt(txtId.getText());
-
-            dao.borrarEmpleado(id);
-
-            cargarTabla();
-            limpiarCampos();
-
-            JOptionPane.showMessageDialog(this, "Empleado eliminado correctamente.");
-
-        } catch (Exception ex) {
-            JOptionPane.showMessageDialog(this, "Error al eliminar empleado: " + ex.getMessage());
-        }
-    }
-
-    private void agregarEmpleado() {
-
-    try {
         String nombre = txtNombre.getText().trim();
-        String departamento = txtDepartamento.getText().trim();
 
-        if (nombre.isEmpty() || departamento.isEmpty()) {
-            JOptionPane.showMessageDialog(this,
-                    "Nombre y departamento no pueden estar vacíos.");
-            return;
-        }
+        Departamento d = (Departamento) cbDepartamento.getSelectedItem();
 
-        dao.insertarEmpleado(nombre, departamento);
+        dao.insertarEmpleado(nombre, d.getId(), rutaFoto);
 
-        cargarTabla();
-        limpiarCampos();
-
-        JOptionPane.showMessageDialog(this,
-                "Empleado agregado correctamente.");
-
-    } catch (Exception ex) {
-        JOptionPane.showMessageDialog(this,
-                "Error al agregar empleado: " + ex.getMessage());
+        loadTable();
+        clear();
     }
-}
-    private void limpiarCampos() {
+
+    private void updateEmployee() {
+
+        int id = Integer.parseInt(txtId.getText());
+
+        String nombre = txtNombre.getText().trim();
+
+        Departamento d = (Departamento) cbDepartamento.getSelectedItem();
+
+        dao.actualizarEmpleado(id, nombre, d.getId(), rutaFoto);
+
+        loadTable();
+        clear();
+    }
+
+    private void deleteEmployee() {
+
+        int id = Integer.parseInt(txtId.getText());
+
+        dao.borrarEmpleado(id);
+
+        loadTable();
+        clear();
+    }
+
+    private void clear() {
+
         txtId.setText("");
         txtNombre.setText("");
-        txtDepartamento.setText("");
+        rutaFoto = "";
+
+        lblFoto.setIcon(null);
     }
 }
-

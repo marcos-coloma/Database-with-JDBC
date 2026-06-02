@@ -1,17 +1,25 @@
 package models;
+
 public class Empleados {
+
     private int id;
     private String nombre;
     private String departamento;
+    private String foto;
 
-    // Constructor
-    public Empleados(int id, String nombre, String departamento) {
+    // constructor completo
+    public Empleados(int id, String nombre, String departamento, String foto) {
         this.id = id;
         this.nombre = nombre;
         this.departamento = departamento;
+        this.foto = foto;
     }
 
-    // Getters and Setters
+    // constructor sin foto (opcional, útil para inserts)
+    public Empleados(int id, String nombre, String departamento) {
+        this(id, nombre, departamento, null);
+    }
+
     public int getId() {
         return id;
     }
@@ -34,5 +42,13 @@ public class Empleados {
 
     public void setDepartamento(String departamento) {
         this.departamento = departamento;
+    }
+
+    public String getFoto() {
+        return foto;
+    }
+
+    public void setFoto(String foto) {
+        this.foto = foto;
     }
 }
